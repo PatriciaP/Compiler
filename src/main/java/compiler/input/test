@@ -1,0 +1,21 @@
+/*==============================
+**  Programa exemplo em miniC
+**
+**  - fatora um inteiro lido.
+**==============================
+*/
+
+// aumentando a linha de inicio
+
+	for(aba=10;aba<100;aba=aba+10){
+	aba = 10+aba;
+	}
+
+	for(aba=10;aba<100;aba=aba+5){
+	//		while(!i){
+				//print("ABA",aba);
+		//		scan("OLA",aba);
+				//print("ola"," mundo",aba);
+	}
+	//}
+}

@@ -29,7 +29,7 @@ public enum Token {
     SUM("+"), SUBTRACTION("-"), MULT("*"), DIV("/"), 
     MOD("%"), OR("||"), AND("&&"), NOT("!"), EQUAL("=="),
     DIFFERENT("!="), BIGGER(">"), BIGGER_EQUAL(">="),
-    SMALLER("<"), SMALLER_EQUAL("<="),
+    SMALLER("<"), SMALLER_EQUAL("<="), POTENCY("**"),
     
     
     //TOKENS KEYWORDS

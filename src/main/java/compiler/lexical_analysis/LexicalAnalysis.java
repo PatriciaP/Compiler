@@ -1,48 +1,64 @@
 /*
  * IFMG - COMPILERS - 2018
- * Lexical Analysis 
+ * Lexical Analysis
  */
 package compiler.lexical_analysis;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Scanner;
 
 /**
- *
  * @author Patricia Pieroni The Lexical Analysis reads the source file,
  * character by character, taking the tokens as established by the grammar
  */
 public class LexicalAnalysis {
 
-    public static char caractere;
-    public static int cursor = 0, strLenght = 0, state = 1, flag = 0, aux = 0;
-    public static String contentFile;
+    private static char caractere;
+    private static int cursor = 0;
+    private static int state = 1;
+    private static int flag = 0;
+    private static int aux = 0;
+    private static String contentFile;
     public static File file;
-    public static Current current = new Current();
+    private static Current current = new Current();
 
-//    public static void main(String[] args) throws IOException {
-//        file = new File("C:\\Users\\patri\\Documents\\NetBeansProjects\\Compilers\\src\\input\\teste.txt").getAbsoluteFile();
-//        contentFile = loadArq(file.getAbsoluteFile().toPath());
-//       
-//
-//        System.out.println(contentFile);
-//        while (current.token != Token.EOF) {
-//            getToken();
-//        }
-//
-//    }
-    
-    public static char getChar() {
-        
+    public static void main(String[] args) throws IOException {
+        file = new File("src\\main\\java\\compiler\\input\\test").getCanonicalFile();
+        System.out.println(file);
+        contentFile = loadArq(file.toPath());
+        System.out.println(contentFile);
+        while (current.token != Token.EOF) {
+            getToken();
+        }
+
+    }
+
+    private static char getChar() {
         return contentFile.charAt(cursor);
     }
 
+    private static void updateManipulation() {
+        cursor++;
+        if (flag == 0) {
+            current.column = 1;
+        }
+        if (flag > 0) {
+            current.column = current.column + aux;
+        }
+        aux = 1;
+        current.lexeme = String.format("%s%s", current.lexeme, caractere);
+    }
+
+    private static void goToState(int num) {
+        cursor++;
+        state = num;
+        current.lexeme = String.format("%s%s", current.lexeme, caractere);
+    }
+
     public static Current getToken() {
+        String lexemeAux;
         state = 1;
         current.lexeme = "";
         current.token = null;
@@ -61,143 +77,88 @@ public class LexicalAnalysis {
 
                     case 1:
                         if ((contentFile.charAt(cursor) == '\n') || (contentFile.charAt(cursor) == '\r')) {
-                            current.lexeme = current.lexeme + caractere;
+                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
                             cursor++;
                             if (current.lexeme.contains(System.getProperty("line.separator"))) {
                                 current.line++;
                                 flag = 0;
-                                current.lexeme="";
+                                current.lexeme = "";
                             }
                         } else {
-                            current.lexeme = "";
                             if (caractere == ' ' || caractere == '\t') {
                                 cursor++;
                                 current.column++;
                                 continue;
                             }
                             if (Character.isAlphabetic(caractere)) {
-                                state = 2;
-                                cursor++;
-                                current.lexeme = current.lexeme + caractere;
+                                goToState(2);
                             } else if (Character.isDigit(caractere)) {
-                                cursor++;
-                                state = 3;
-                                current.lexeme = current.lexeme + caractere;
+                                goToState(3);
                             } else if (caractere == '"') {
-                                cursor++;
-                                state = 4;
-                                current.lexeme = current.lexeme + caractere;
+                                goToState(5);
                             } else if (caractere == '(') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.OPEN_PAR);
-
                             } else if (caractere == ')') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.CLOSE_PAR);
                             } else if (caractere == '{') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.OPEN_BRACKET);
                             } else if (caractere == '}') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.CLOSE_BRACKET);
                             } else if (caractere == ';') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SEMICOLON);
                             } else if (caractere == ',') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.COMMA);
                             } else if (caractere == '+') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SUM);
                             } else if (caractere == '*') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.MULT);
-
+                                goToState(7);
                             } else if (caractere == '/') {
-                                cursor++;
-                                current.lexeme = current.lexeme + caractere;
-                                state = 5;
+                                goToState(6);
                             } else if (caractere == '%') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 return LexicalAnalysis.updateCurrent(current.line, current.column, Token.MOD);
                             } else if (caractere == '=') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 if (contentFile.charAt(cursor) == '=') {
                                     cursor++;
-                                    current.lexeme = current.lexeme + '*';
+                                    current.lexeme += '=';
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EQUAL);
                                 } else {
-                                    cursor++;
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.RECEIVE);
                                 }
                             } else if (caractere == '!') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 if (contentFile.charAt(cursor) == '=') {
                                     cursor++;
-                                    current.lexeme = current.lexeme + '=';
+                                    current.lexeme += '=';
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.DIFFERENT);
                                 } else {
-                                    cursor++;
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NOT);
                                 }
                             } else if (caractere == '>') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 if (contentFile.charAt(cursor) == '=') {
                                     cursor++;
-                                    current.lexeme = current.lexeme + '=';
+                                    current.lexeme += '=';
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BIGGER_EQUAL);
                                 } else {
-                                    cursor++;
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BIGGER);
                                 }
                             } else if (caractere == '<') {
-                                cursor++;
-                                current.column = current.column + aux;
-                                aux = 1;
-                                current.lexeme = current.lexeme + caractere;
+                                updateManipulation();
                                 if (contentFile.charAt(cursor) == '=') {
                                     cursor++;
-                                    current.lexeme = current.lexeme + '=';
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EQUAL);
-                                } else {
-                                    cursor++;
+                                    current.lexeme += '=';
                                     return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SMALLER_EQUAL);
+                                } else {
+                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SMALLER);
                                 }
                             } else if (cursor > contentFile.length()) {
                                 state = 9;
@@ -205,59 +166,67 @@ public class LexicalAnalysis {
                         }
                         break;
 
-                    // ESTADO DE VERIFICACAO DOS TOKENS IDENT, OU KEYWORDS    
+                    // state verification of tokens: IDENT,KEYWORDS
                     case 2:
-                        if (current.lexeme.matches("[a-zA-Z]+[\\d]*")) {
-                            cursor++;
-                            state = 2;
-                            current.lexeme = current.lexeme + caractere;
-                        } else if (!Character.isAlphabetic(caractere) || !Character.isDigit(caractere)) {
-                            cursor--;
-                            current.lexeme = current.lexeme.substring(0, current.lexeme.length() - 1);
+                        if (current.lexeme.matches("[a-zA-Z]+[\\d]*") && Character.isAlphabetic(caractere)) {
+                            goToState(2);
+                        } else {
+
                             state = 9;
                         }
                         break;
 
-                    // ESTADO VERIFICACAO DO TOKEN DE NUMERO
+                    // state verification of number token (int)
                     case 3:
                         if (Character.isDigit(caractere)) {
-                            cursor++;
-                            state = 3;
-                            current.lexeme = current.lexeme + caractere;
+                            goToState(3);
                         } else if (caractere == '.') {
-                            cursor++;
-                            state = 8;
-                            current.lexeme = current.lexeme + caractere;
+                            goToState(4);
                         } else if (Character.isAlphabetic(caractere)) {
                             state = -1;
-                            current.lexeme = current.lexeme + caractere;
+                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
                         } else if (!Character.isDigit(caractere) && !(caractere == '.')) {
-                            state = 9;
-
+                            if (current.lexeme.matches("(\\d)+")) {
+                                current.column += aux;
+                                aux = current.lexeme.length();
+                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NUM_INT);
+                            }
                         }
                         break;
-
-                    // ESTADO VERIFICACAO TOKEN STR    
+                    //state verification of number token (float)
                     case 4:
-                        current.lexeme = current.lexeme + caractere;
-                        if (caractere == '"') {
-                            state = 9;
-                            cursor++;
-                        } else if (current.lexeme.matches("\".*")) {
-                            cursor++;
-                            state = 4;
+                        if (Character.isDigit(caractere)) {
+                            goToState(4);
+                        } else if (caractere == '.') {
+                            state = -1;
+                        } else {
+                            if (current.lexeme.matches("(\\d)+[.](\\d)+")) {
+                                current.column += aux;
+                                aux = current.lexeme.length();
+                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NUM_FLOAT);
+                            }
                         }
                         break;
 
+                    // state verification of string token
                     case 5:
+                        if (caractere == '"') {
+                            goToState(9);
+                        } else if (current.lexeme.matches("\".*")) {
+                            goToState(5);
+                        }
+                        break;
+
+                    // state verification of code comments or div token
+                    case 6:
                         if (contentFile.charAt(cursor) == '*') {
                             while (!current.lexeme.endsWith("*/")) {
-                                if (current.lexeme.contains(System.getProperty("line.separator"))) {
+                                if (current.lexeme.endsWith(System.getProperty("line.separator"))) {
                                     current.line++;
                                     flag = 0;
                                 }
                                 cursor++;
-                                current.lexeme = current.lexeme + caractere;
+                                current.lexeme = String.format("%s%s", current.lexeme, caractere);
                                 caractere = getChar();
                             }
                             current.lexeme = "";
@@ -267,7 +236,7 @@ public class LexicalAnalysis {
                             while (!current.lexeme.endsWith(System.getProperty("line.separator"))) {
                                 cursor++;
                                 caractere = getChar();
-                                current.lexeme = current.lexeme + caractere;
+                                current.lexeme = String.format("%s%s", current.lexeme, caractere);
                             }
                             current.lexeme = "";
                             current.line++;
@@ -275,27 +244,28 @@ public class LexicalAnalysis {
                             state = 1;
                         } else {
                             cursor++;
-                            current.lexeme = current.lexeme + caractere;
+                            current.column += aux;
+                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
                             return LexicalAnalysis.updateCurrent(current.line, current.column, Token.DIV);
                         }
 
                         break;
 
-                    // ESTADO VERIFICACAO DO TOKEN DE NUMERO
-                    case 8:
-                        if (Character.isDigit(caractere)) {
+                    // state verification of potency (**) or just multiply  7
+                    case 7:
+                        if (caractere == '*') {
                             cursor++;
-                            state = 8;
-                            current.lexeme = current.lexeme + caractere;
-                        } else if (caractere == '.') {
-                            state = -1;
+                            current.column += aux;
+                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
+                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.POTENCY);
                         } else {
-                            state = 9;
-
+                            cursor++;
+                            current.column += aux;
+                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.MULT);
                         }
-                        break;
 
-                    //Estado final retorno de tokens
+
+                        //Estado final retorno de tokens: ident, str
                     case 9:
                         if (flag == 0) {
                             current.column = 1;
@@ -341,12 +311,6 @@ public class LexicalAnalysis {
                         } else if (current.lexeme.equals("break")) {
                             aux = current.lexeme.length();
                             return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BREAK);
-                        } else if (current.lexeme.matches("(\\d)+[.](\\d)+")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NUM_FLOAT);
-                        } else if (current.lexeme.matches("(\\d)+")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NUM_INT);
                         } else if (current.lexeme.matches("[a-zA-Z]+[\\d]*")) {
                             aux = current.lexeme.length();
                             return LexicalAnalysis.updateCurrent(current.line, current.column, Token.IDENT);
@@ -361,28 +325,23 @@ public class LexicalAnalysis {
                         }
 
                 }
-
             }
         }
 
         return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EOF);
-
     }
 
-    public static String loadArq(Path name) throws IOException {
+    private static String loadArq(Path name) throws IOException {
         return new String(Files.readAllBytes(name));
     }
 
-    public static Current updateCurrent(int line, int column, Token token) {
+    private static Current updateCurrent(int line, int column, Token token) {
 
         current.line = line;
         current.column = column;
         current.token = token;
-        //System.out.println(current.toString());
+        System.out.println(current.toString());
         return current;
-
     }
-    
-   
 
 }
