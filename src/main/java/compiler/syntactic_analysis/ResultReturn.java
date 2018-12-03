@@ -7,22 +7,34 @@ package compiler.syntactic_analysis;
 
 import compiler.virtual_machine.Quadruple;
 
+import java.util.List;
+
 /**
  * @author Patricia Pieroni
  */
 public class ResultReturn {
 
-    public boolean leftValue;
+    //IF FALSE, MEANS THAT THE VALUE CAN NOT SHOW ON THE LEFT SIDE of '='
+    private boolean leftValue;
 
-    public Quadruple listQuadruple;
+    private List<Quadruple> listQuadruple;
 
-    public String nameResult;
+    private String nameResult;
 
     public ResultReturn() {
     }
 
-    public ResultReturn(boolean leftValue, Quadruple listQuadruple, String nameResult) {
+    public ResultReturn(List<Quadruple> listQuadruple) {
+        this.listQuadruple = listQuadruple;
+    }
+
+    public ResultReturn(boolean leftValue, List<Quadruple> listQuadruple, String nameResult) {
         this.leftValue = leftValue;
+        this.listQuadruple = listQuadruple;
+        this.nameResult = nameResult;
+    }
+
+    public ResultReturn(List<Quadruple> listQuadruple, String nameResult) {
         this.listQuadruple = listQuadruple;
         this.nameResult = nameResult;
     }
@@ -35,11 +47,11 @@ public class ResultReturn {
         this.leftValue = leftValue;
     }
 
-    public Quadruple getListQuadruple() {
+    public List<Quadruple> getListQuadruple() {
         return listQuadruple;
     }
 
-    public void setListQuadruple(Quadruple listQuadruple) {
+    public void setListQuadruple(List<Quadruple> listQuadruple) {
         this.listQuadruple = listQuadruple;
     }
 

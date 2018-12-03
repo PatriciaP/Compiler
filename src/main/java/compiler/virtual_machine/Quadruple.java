@@ -1,34 +1,90 @@
 package compiler.virtual_machine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Which instruction has a struct with a quadruple
- * (operation, address1, address2, address3)
+ * (operation, address1, arg2, result)
  */
 public class Quadruple {
 
 
+
     public String op;
 
-    public String address1;
+    public String arg1;
 
-    public String address2;
+    public String arg2;
 
-    public String address3;
+    public String result;
 
 
     public Quadruple() {
     }
 
-    public Quadruple(String op, String address1, String address2) {
+    public Quadruple(String op) {
         this.op = op;
-        this.address1 = address1;
-        this.address2 = address2;
     }
 
-    public Quadruple(String op, String address1, String address2, String address3) {
+    //params operators
+    public Quadruple(String op, String arg1) {
         this.op = op;
-        this.address1 = address1;
-        this.address2 = address2;
-        this.address3 = address3;
+        this.arg1 = arg1;
+    }
+
+    // unary operators  (x = y)
+    public Quadruple(String op, String arg1, String arg2) {
+        this.op = op;
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+    }
+
+
+    //example x = y op z, arg1: y, arg2: z and reuslt: x
+    public Quadruple(String op, String arg1, String arg2, String result) {
+        this.op = op;
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+        this.result = result;
+    }
+
+    public static List<Quadruple> concatenateLists(List<Quadruple> list1, List<Quadruple> list2) {
+        List<Quadruple> resultList = new ArrayList<>(list1);
+        resultList.addAll(list2);
+        return resultList;
+    }
+
+
+    public String getOp() {
+        return op;
+    }
+
+    public void setOp(String op) {
+        this.op = op;
+    }
+
+    public String getArg1() {
+        return arg1;
+    }
+
+    public void setArg1(String arg1) {
+        this.arg1 = arg1;
+    }
+
+    public String getArg2() {
+        return arg2;
+    }
+
+    public void setArg2(String arg2) {
+        this.arg2 = arg2;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
     }
 }

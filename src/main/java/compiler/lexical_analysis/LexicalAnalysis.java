@@ -58,7 +58,6 @@ public class LexicalAnalysis {
     }
 
     public static Current getToken() {
-        String lexemeAux;
         state = 1;
         current.lexeme = "";
         current.token = null;
@@ -265,7 +264,7 @@ public class LexicalAnalysis {
                         }
 
 
-                        //Estado final retorno de tokens: ident, str
+                        //final state, return of tokens : ident, str
                     case 9:
                         if (flag == 0) {
                             current.column = 1;
