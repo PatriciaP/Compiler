@@ -1,6 +1,6 @@
 package compiler.exceptions;
 
-public class Exceptions extends Exception {
+public class Exceptions extends RuntimeException {
 
     public Exceptions() {
     }

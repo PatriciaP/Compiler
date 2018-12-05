@@ -50,8 +50,11 @@ public class Quadruple {
     }
 
     public static List<Quadruple> concatenateLists(List<Quadruple> list1, List<Quadruple> list2) {
-        List<Quadruple> resultList = new ArrayList<>(list1);
-        resultList.addAll(list2);
+        List<Quadruple> resultList = new ArrayList<>();
+        if (list1 != null)
+            resultList = list1;
+        if (list2 != null)
+            resultList.addAll(list2);
         return resultList;
     }
 
@@ -86,5 +89,15 @@ public class Quadruple {
 
     public void setResult(String result) {
         this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        return "\nQuadruple{" +
+                "op='" + op + '\'' +
+                ", arg1='" + arg1 + '\'' +
+                ", arg2='" + arg2 + '\'' +
+                ", result='" + result + '\'' +
+                '}';
     }
 }

@@ -1,6 +1,5 @@
 #------------------------------------
 # o programa sera numa funcao main
-#  MINI-C
 #------------------------------------
 
 <function*> -> <type> 'IDENT' '(' <argList> ')' <bloco> ;
@@ -16,9 +15,8 @@
    | <expr> ';'
    | <ifStmt>
    | <bloco>
-   | 'break' ';'
-   | 'continue' ';'
-   | 'return' ';'
+   | 'break'
+   | 'continue'
    | <declaration>
    | ';' ;
 
@@ -35,17 +33,14 @@
 <forStmt> -> 'for' '(' <optExpr> ';'
               <optExpr> ';' <optExpr> ')' <stmt> ;
 <optExpr> -> <expr> | & ;
-
 # comandos de IO
-<ioStmt> -> 'scan' '(' 'STR' ',' 'IDENT' ')' ';'
+<ioStmt> -> 'scan' '(' 'IDENT' ')' ';'
           | 'print' '(' <outList> ')' ';' ;
 <outList> -> <out> <restoOutList> ;
 <out> -> 'STR' | 'IDENT' | 'NUMint' | 'NUMfloat' ;
 <restoOutList> -> ',' <out> <restoOutList> | & ;
-
 # comando while
 <whileStmt> -> 'while' '(' <expr> ')' <stmt> ;
-
 # comando if
 <ifStmt> -> 'if' '(' <expr> ')' <stmt> <elsePart> ;
 <elsePart> -> 'else' <stmt> | & ;
@@ -53,7 +48,6 @@
 #------------------------------
 # expressoes
 #------------------------------
-
 <expr> -> <atrib> ;
 <atrib> -> <or> <restoAtrib> ;
 <restoAtrib> -> '=' <atrib> | & ;
@@ -80,3 +74,4 @@
 #---------
 # the end
 #---------
+

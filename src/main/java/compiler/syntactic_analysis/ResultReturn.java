@@ -62,4 +62,6 @@ public class ResultReturn {
     public void setNameResult(String nameResult) {
         this.nameResult = nameResult;
     }
+
+
 }

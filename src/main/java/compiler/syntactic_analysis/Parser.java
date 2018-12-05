@@ -5,41 +5,54 @@
 package compiler.syntactic_analysis;
 
 import compiler.exceptions.Errors;
-import compiler.lexical_analysis.Current;
 import compiler.lexical_analysis.LexicalAnalysis;
 import compiler.lexical_analysis.Token;
 import compiler.virtual_machine.Quadruple;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
 
 /**
- *
  * @author Patricia Pieroni
  */
 public class Parser {
 
 
-    public static Current actualToken;
-
     // name and type
-    public static HashMap<String,Token> symbolsTable;
-    private static List<String> idList;
+    private static HashMap<String, Token> symbolsTable = new HashMap<>();
+    private static List<String> idList = new ArrayList<>();
     //Block Scope
     private static int actualBlock = -1;
 
 
-    //token validation
-    public static void token_consume(Token token) throws Throwable {
-        System.out.println("Token expected " + token + " Token received " + actualToken.getToken());
-        if (actualToken.getToken().equals(token)) {
-            actualToken = LexicalAnalysis.getToken();
-        } else {
-            throw Errors.SyntaticError(token);
+    public static void main(String[] args) throws RuntimeException, IOException {
+        LexicalAnalysis.file = new File("src\\main\\java\\compiler\\input\\test").getCanonicalFile();
+        LexicalAnalysis.contentFile = LexicalAnalysis.loadArq(LexicalAnalysis.file.toPath());
+        System.out.println(LexicalAnalysis.contentFile);
+
+        List<ResultReturn> code = Collections.singletonList(Parser.parser());
+
+        for (int i = 0; i < code.size(); i++) {
+            System.out.println(code);
         }
     }
+
+
+    //token validation
+    private static void token_consume(Token token) {
+        System.out.println("Token expected " + token + " Token received " + LexicalAnalysis.current.getToken());
+        if (LexicalAnalysis.current.getToken().equals(token)) {
+            LexicalAnalysis.current = LexicalAnalysis.getToken();
+        } else {
+            try {
+                throw Errors.SyntaticError(token);
+            } catch (RuntimeException RuntimeException) {
+                RuntimeException.printStackTrace();
+            }
+        }
+    }
+
 
     private static String formatVarName(String var) {
         return "v_" + actualBlock + "_" + var;
@@ -89,9 +102,12 @@ public class Parser {
     //free all the variables and temps created on the current block
     private static void freeBlock() {
 
+        //every vars and temps of actual block
         List<String> freeVars = new ArrayList<>();
 
-        for (String name : symbolsTable.keySet()) {
+        Iterator iterator = symbolsTable.keySet().iterator();
+        while (iterator.hasNext()) {
+            String name = (String) iterator.next();
             int index = name.indexOf('_', 2);
             int blockId = Integer.parseInt(name.substring(2, index));
             String varName = name.substring(index + 1);
@@ -99,74 +115,75 @@ public class Parser {
             if (blockId == actualBlock) {
                 freeVars.add(name);
             }
+        }
 
-            //deleting the variables in the free list
-            for (String nameVar : symbolsTable.keySet()) {
-                for (String freeVar : freeVars) {
-                    if (nameVar.equals(freeVar)) {
-                        symbolsTable.remove(nameVar);
-                    }
+        Iterator iteratorDel = symbolsTable.keySet().iterator();
+
+        while (iteratorDel.hasNext()) {
+            String nameVar = (String) iteratorDel.next();
+            for (String freeVar : freeVars) {
+                if (nameVar.equals(freeVar)) {
+                    iteratorDel.remove();
                 }
             }
-
         }
+
     }
 
 
-    public static List<Quadruple> parser() throws Throwable {
-        List<Quadruple> quad;
-        actualToken = LexicalAnalysis.getToken();
-        quad = function();
-        token_consume(actualToken.getToken());
+    public static ResultReturn parser() throws RuntimeException {
+        LexicalAnalysis.current = LexicalAnalysis.getToken();
+        ResultReturn code = function();
+        System.out.println(code.getListQuadruple());
+        System.out.println();
+
+        token_consume(LexicalAnalysis.current.getToken());
         token_consume(Token.EOF);
-        quad.add(new Quadruple("stop"));
-        return quad;
+        code.getListQuadruple().add(new Quadruple("stop"));
+        return code;
 
     }
 
 
     /*GRAMATIC MINI C*/
-    private static List<Quadruple> function() throws Throwable {
-        List<Quadruple> quad;
+    private static ResultReturn function() throws RuntimeException {
         type();
         token_consume(Token.IDENT);
         token_consume(Token.OPEN_PAR);
-        quad = argList();
+        ResultReturn rArg = argList();
         token_consume(Token.CLOSE_PAR);
-        quad.add(bloco());
-        return quad;
+        ResultReturn rB = bloco(null, null);
+        return new ResultReturn(Quadruple.concatenateLists(rArg.getListQuadruple(), rB.getListQuadruple()));
 
     }
-//
 
-//
+    private static Token type() throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.FLOAT)) {
+            token_consume(Token.FLOAT);
+            return Token.FLOAT;
+        } else {
+            token_consume(Token.INT);
+            return Token.INT;
+        }
+    }
 
-//
-//    private static ResultReturn type() {
-//        ResultReturn r = new ResultReturn();
-//        if (actualToken.getToken().equals(Token.INT) || actualToken.getToken().equals(Token.FLOAT)) {
-//            r.type = actualToken.getToken();
-//            //
-//            token_consume(actualToken.getToken());
-//        } else {
-//            //
-//        }
-//
-//        return r;
-//
-//    }
-//
-private static void bloco(String begin, String end) {
-    token_consume(Token.OPEN_BRACKET);
-    stmtList();
-    token_consume(Token.CLOSE_BRACKET);
+    //
+    private static ResultReturn bloco(String begin, String end) throws RuntimeException {
+        token_consume(Token.OPEN_BRACKET);
+        actualBlock++;
+        ResultReturn stmtL = stmtList(begin, end);
+        freeBlock();
+        actualBlock--;
+        token_consume(Token.CLOSE_BRACKET);
 
-}
+        return stmtL;
 
-    private static ResultReturn argList() throws Throwable {
+    }
 
-        if (actualToken.getToken().equals(Token.INT)
-                || actualToken.getToken().equals(Token.FLOAT)) {
+    private static ResultReturn argList() throws RuntimeException {
+
+        if (LexicalAnalysis.current.getToken().equals(Token.INT)
+                || LexicalAnalysis.current.getToken().equals(Token.FLOAT)) {
             ResultReturn rArg = arg();
             ResultReturn rResto = restoArgList();
 
@@ -177,8 +194,8 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn restoArgList() throws Throwable {
-        if (actualToken.getToken().equals(Token.COMMA)) {
+    private static ResultReturn restoArgList() throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.COMMA)) {
             token_consume(Token.COMMA);
             argList();
             return new ResultReturn(new ArrayList<Quadruple>());
@@ -188,77 +205,80 @@ private static void bloco(String begin, String end) {
     }
 
 
-    private static ResultReturn arg() throws Throwable {
+    private static ResultReturn arg() throws RuntimeException {
         type();
         token_consume(Token.IDENT);
         return new ResultReturn(new ArrayList<Quadruple>());
     }
 
-    private static ResultReturn stmtList(String begin, String end) throws Throwable {
+    private static ResultReturn stmtList(String begin, String end) throws RuntimeException {
 
-        if (actualToken.getToken().equals(Token.FOR)
-                || actualToken.getToken().equals(Token.SCAN)
-                || actualToken.getToken().equals(Token.PRINT)
-                || actualToken.getToken().equals(Token.WHILE)
-                || actualToken.getToken().equals(Token.SUM)
-                || actualToken.getToken().equals(Token.NOT)
-                || actualToken.getToken().equals(Token.SUBTRACTION)
-                || actualToken.getToken().equals(Token.NUM_INT)
-                || actualToken.getToken().equals(Token.NUM_FLOAT)
-                || actualToken.getToken().equals(Token.IDENT)
-                || actualToken.getToken().equals(Token.OPEN_PAR)
-                || actualToken.getToken().equals(Token.IF)
-                || actualToken.getToken().equals(Token.OPEN_BRACKET)
-                || actualToken.getToken().equals(Token.BREAK)
-                || actualToken.getToken().equals(Token.CONTINUE)
-                || actualToken.getToken().equals(Token.INT)
-                || actualToken.getToken().equals(Token.FLOAT)
-                || actualToken.getToken().equals(Token.SEMICOLON)
-                || actualToken.getToken().equals(Token.RETURN)) {
+        if (LexicalAnalysis.current.getToken().equals(Token.FOR)
+                || LexicalAnalysis.current.getToken().equals(Token.SCAN)
+                || LexicalAnalysis.current.getToken().equals(Token.PRINT)
+                || LexicalAnalysis.current.getToken().equals(Token.WHILE)
+                || LexicalAnalysis.current.getToken().equals(Token.SUM)
+                || LexicalAnalysis.current.getToken().equals(Token.NOT)
+                || LexicalAnalysis.current.getToken().equals(Token.SUBTRACTION)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_INT)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_FLOAT)
+                || LexicalAnalysis.current.getToken().equals(Token.IDENT)
+                || LexicalAnalysis.current.getToken().equals(Token.OPEN_PAR)
+                || LexicalAnalysis.current.getToken().equals(Token.IF)
+                || LexicalAnalysis.current.getToken().equals(Token.OPEN_BRACKET)
+                || LexicalAnalysis.current.getToken().equals(Token.BREAK)
+                || LexicalAnalysis.current.getToken().equals(Token.CONTINUE)
+                || LexicalAnalysis.current.getToken().equals(Token.INT)
+                || LexicalAnalysis.current.getToken().equals(Token.FLOAT)
+                || LexicalAnalysis.current.getToken().equals(Token.SEMICOLON)
+                || LexicalAnalysis.current.getToken().equals(Token.RETURN)) {
             ResultReturn rStmt = stmt(begin, end);
             ResultReturn rStmtList = stmtList(begin, end);
 
             return new ResultReturn(Quadruple.concatenateLists(Objects.requireNonNull(rStmt).getListQuadruple(), rStmtList.getListQuadruple()));
         } else {
-            return null;
+            //  } else if (LexicalAnalysis.current.getToken().equals(Token.INT)
+            //                || LexicalAnalysis.current.getToken().equals(Token.FLOAT)) {
+            //            return declaration();
+            return new ResultReturn();
         }
     }
 
 
-    //TODO: VERIFICAR RETURN
-    private static ResultReturn stmt(String begin, String end) throws Throwable {
-        if (actualToken.getToken().equals(Token.FOR)) {
+    private static ResultReturn stmt(String begin, String end) throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.FOR)) {
             return forStmt();
-        } else if (actualToken.getToken().equals(Token.PRINT)
-                || (actualToken.getToken().equals(Token.SCAN))) {
-            ioStmt();
-        } else if (actualToken.getToken().equals(Token.WHILE)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.PRINT)
+                || (LexicalAnalysis.current.getToken().equals(Token.SCAN))) {
+            return ioStmt();
+        } else if (LexicalAnalysis.current.getToken().equals(Token.WHILE)) {
             return whileStmt();
-        } else if (actualToken.getToken().equals(Token.NOT)
-                || actualToken.getToken().equals(Token.SUM)
-                || actualToken.getToken().equals(Token.SUBTRACTION)
-                || actualToken.getToken().equals(Token.NUM_INT)
-                || actualToken.getToken().equals(Token.NUM_FLOAT)
-                || actualToken.getToken().equals(Token.IDENT)
-                || actualToken.getToken().equals(Token.OPEN_PAR)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.NOT)
+                || LexicalAnalysis.current.getToken().equals(Token.SUM)
+                || LexicalAnalysis.current.getToken().equals(Token.SUBTRACTION)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_INT)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_FLOAT)
+                || LexicalAnalysis.current.getToken().equals(Token.IDENT)
+                || LexicalAnalysis.current.getToken().equals(Token.OPEN_PAR)) {
             ResultReturn rExpr = expr();
             token_consume(Token.SEMICOLON);
             return new ResultReturn(rExpr.getListQuadruple());
-        } else if (actualToken.getToken().equals(Token.IF)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.IF)) {
             return ifStmt(begin, end);
-        } else if (actualToken.getToken().equals(Token.OPEN_BRACKET)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.OPEN_BRACKET)) {
             return bloco(begin, end);
-        } else if (actualToken.getToken().equals(Token.BREAK)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.BREAK)) {
             return operationBreak(end);
-        } else if (actualToken.getToken().equals(Token.CONTINUE)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.CONTINUE)) {
             return operationContinue(begin);
-        } else if (actualToken.getToken().equals(Token.INT)
-                || actualToken.getToken().equals(Token.FLOAT)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.INT)
+                || LexicalAnalysis.current.getToken().equals(Token.FLOAT)) {
             return declaration();
-        } else if (actualToken.getToken().equals(Token.RETURN)) {
+        } else if (LexicalAnalysis.current.getToken().equals(Token.RETURN)) {
             token_consume(Token.RETURN);
-            fator();
+            ResultReturn rF = fator();
             token_consume(Token.SEMICOLON);
+            return new ResultReturn();
         } else {
             token_consume(Token.SEMICOLON);
             return null;
@@ -266,7 +286,7 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn forStmt() throws Throwable {
+    private static ResultReturn forStmt() throws RuntimeException {
         token_consume(Token.FOR);
         token_consume(Token.OPEN_PAR);
         ResultReturn rOEAttribution = optExpr();
@@ -287,7 +307,7 @@ private static void bloco(String begin, String end) {
         codeList = Quadruple.concatenateLists(codeList, Objects.requireNonNull(rOEComparation).getListQuadruple());
         codeList.add(new Quadruple(Token.IF.getDescription(), rOEComparation.getNameResult(), null, labelEnd));
         codeList = Quadruple.concatenateLists(codeList,
-                Quadruple.concatenateLists(rStmt.getListQuadruple(), Objects.requireNonNull(rOEIncrementation).getListQuadruple()));
+                Quadruple.concatenateLists(rStmt != null ? rStmt.getListQuadruple() : null, Objects.requireNonNull(rOEIncrementation).getListQuadruple()));
         codeList.add(new Quadruple("jump", labelBegin, null, null));
         codeList.add(new Quadruple("label", labelEnd, null, null));
 
@@ -297,19 +317,19 @@ private static void bloco(String begin, String end) {
     }
 
 
-    private static ResultReturn ioStmt() throws Throwable {
-        if (actualToken.getToken().equals(Token.SCAN)) {
+    private static ResultReturn ioStmt() throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.SCAN)) {
             token_consume(Token.SCAN);
             token_consume(Token.OPEN_PAR);
 
-            //remove char "
-            String str = actualToken.getLexeme().substring(1,
-                    actualToken.getLexeme().length() - 1);
+            //remove char ", str before the scan
+            String str = LexicalAnalysis.current.getLexeme().substring(1,
+                    LexicalAnalysis.current.getLexeme().length() - 1);
 
             token_consume(Token.STR);
             token_consume(Token.COMMA);
 
-            String localVar = Parser.formatVarName(actualToken.getLexeme());
+            String localVar = Parser.formatVarName(LexicalAnalysis.current.getLexeme());
             localVar = Parser.getVarScope(localVar);
 
             token_consume(Token.IDENT);
@@ -317,7 +337,7 @@ private static void bloco(String begin, String end) {
             token_consume(Token.SEMICOLON);
 
             List<Quadruple> listQ = new ArrayList<>();
-            listQ.add(new Quadruple(Token.SCAN.getDescription(), localVar, str, null));
+            listQ.add(new Quadruple(Token.SCAN.getDescription(), localVar, str));
 
             return new ResultReturn(listQ);
         } else {
@@ -326,12 +346,12 @@ private static void bloco(String begin, String end) {
             ResultReturn rOL = outList();
             token_consume(Token.CLOSE_PAR);
             token_consume(Token.SEMICOLON);
-            return new ResultReturn(rOL);
+            return rOL;
         }
 
     }
 
-    private static ResultReturn whileStmt() throws Throwable {
+    private static ResultReturn whileStmt() throws RuntimeException {
         token_consume(Token.WHILE);
         token_consume(Token.OPEN_PAR);
         ResultReturn rExpr = expr();
@@ -344,10 +364,10 @@ private static void bloco(String begin, String end) {
 
         List<Quadruple> codeList = new ArrayList<>();
 
-        codeList.add(new Quadruple("jump", labelBegin, null, null));
+        codeList.add(new Quadruple("label", labelBegin, null, null));
         codeList = Quadruple.concatenateLists(codeList, rExpr.getListQuadruple());
         codeList.add(new Quadruple(Token.IF.getDescription(), rExpr.getNameResult(), null, labelEnd));
-        codeList = Quadruple.concatenateLists(codeList, rStmt.getListQuadruple());
+        codeList = Quadruple.concatenateLists(codeList, Objects.requireNonNull(rStmt).getListQuadruple());
         codeList.add(new Quadruple("jump", labelBegin, null, null));
         codeList.add(new Quadruple("label", labelEnd, null, null));
 
@@ -355,7 +375,7 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn ifStmt(String begin, String end) throws Throwable {
+    private static ResultReturn ifStmt(String begin, String end) throws RuntimeException {
         token_consume(Token.IF);
         token_consume(Token.OPEN_PAR);
         ResultReturn rExpr = expr();
@@ -371,7 +391,7 @@ private static void bloco(String begin, String end) {
 
         codeList = Quadruple.concatenateLists(codeList, expr().getListQuadruple());
         codeList.add(new Quadruple(Token.IF.getDescription(), rExpr.getNameResult(), null, labelFalse));
-        codeList = Quadruple.concatenateLists(codeList, rStmt.getListQuadruple());
+        codeList = Quadruple.concatenateLists(codeList, Objects.requireNonNull(rStmt).getListQuadruple());
         codeList.add(new Quadruple("jump", labelTrue, null, null));
         codeList.add(new Quadruple("label", labelFalse, null, null));
         codeList = Quadruple.concatenateLists(codeList, Objects.requireNonNull(rElse).getListQuadruple());
@@ -381,17 +401,17 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn elsePart(String begin, String end) throws Throwable {
-        if (actualToken.getToken().equals(Token.ELSE)) {
+    private static ResultReturn elsePart(String begin, String end) throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.ELSE)) {
             token_consume(Token.ELSE);
             return stmt(begin, end);
         } else {
             //empty
-            return null;
+            return new ResultReturn();
         }
     }
 
-    private static ResultReturn operationBreak(String end) throws Throwable {
+    private static ResultReturn operationBreak(String end) throws RuntimeException {
 
         if (end != null) {
             token_consume(Token.BREAK);
@@ -402,12 +422,12 @@ private static void bloco(String begin, String end) {
         } else {
             token_consume(Token.BREAK);
             token_consume(Token.SEMICOLON);
-            return null;
+            return new ResultReturn();
         }
     }
 
 
-    private static ResultReturn operationContinue(String begin) throws Throwable {
+    private static ResultReturn operationContinue(String begin) throws RuntimeException {
 
         if (begin != null) {
             token_consume(Token.CONTINUE);
@@ -418,24 +438,24 @@ private static void bloco(String begin, String end) {
         } else {
             token_consume(Token.BREAK);
             token_consume(Token.SEMICOLON);
-            return null;
+            return new ResultReturn();
         }
     }
 
-    private static ResultReturn declaration() throws Throwable {
+    private static ResultReturn declaration() throws RuntimeException {
         List<Quadruple> list = new ArrayList<>();
         Token t = type();
         List<String> varList = identList();
         List<String> declarationList = new ArrayList<>();
 
-        //for each id in the declaration list
-        for (String aDeclarationList : declarationList) {
+        //for each id in the list
+        for (String aDeclarationList : varList) {
 
             String varName = Parser.formatVarName(aDeclarationList);
 
             //if id exists
             if (symbolsTable.containsKey(varName)) {
-                throw Errors.SemanticError("Already declared variable.");
+                throw Errors.SemanticError("Variable already declared.");
             } else {
                 //define type
                 Quadruple quadruple = new Quadruple(Token.RECEIVE.getDescription(), varName, "0");
@@ -456,40 +476,40 @@ private static void bloco(String begin, String end) {
         return new ResultReturn(list);
     }
 
-    private static List<String> identList() throws Throwable {
-        idList.add(actualToken.getLexeme());
+    private static List<String> identList() throws RuntimeException {
+        idList.add(LexicalAnalysis.current.getLexeme());
         token_consume(Token.IDENT);
         restoIdentList(idList);
         return idList;
     }
 
-    private static void restoIdentList(List<String> idList) throws Throwable {
-        if (actualToken.getToken().equals(Token.COMMA)) {
+    private static void restoIdentList(List<String> idList) throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.COMMA)) {
             token_consume(Token.COMMA);
-            idList.add(actualToken.getLexeme());
+            idList.add(LexicalAnalysis.current.getLexeme());
             token_consume(Token.IDENT);
             restoIdentList(idList);
         }
     }
 
 
-    private static ResultReturn optExpr() throws Throwable {
-        if (actualToken.getToken().equals(Token.NOT)
-                || actualToken.getToken().equals(Token.SUM)
-                || actualToken.getToken().equals(Token.SUBTRACTION)
-                || actualToken.getToken().equals(Token.NUM_INT)
-                || actualToken.getToken().equals(Token.NUM_FLOAT)
-                || actualToken.getToken().equals(Token.IDENT)
-                || actualToken.getToken().equals(Token.OPEN_PAR)) {
+    private static ResultReturn optExpr() throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.NOT)
+                || LexicalAnalysis.current.getToken().equals(Token.SUM)
+                || LexicalAnalysis.current.getToken().equals(Token.SUBTRACTION)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_INT)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_FLOAT)
+                || LexicalAnalysis.current.getToken().equals(Token.IDENT)
+                || LexicalAnalysis.current.getToken().equals(Token.OPEN_PAR)) {
             return expr();
         } else {
-            return null;
+            return new ResultReturn();
         }
 
     }
 
 
-    private static ResultReturn outList() throws Throwable {
+    private static ResultReturn outList() throws RuntimeException {
         ResultReturn rO = out();
         ResultReturn rOL = restoOutList();
 
@@ -497,36 +517,38 @@ private static void bloco(String begin, String end) {
                 Objects.requireNonNull(rOL).getListQuadruple()));
     }
 
-    private static ResultReturn restoOutList() throws Throwable {
-        if (actualToken.getToken().equals(Token.COMMA)) {
+    private static ResultReturn restoOutList() throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.COMMA)) {
             token_consume(Token.COMMA);
             ResultReturn rO = out();
             ResultReturn rOL = restoOutList();
             return new ResultReturn(Quadruple.concatenateLists(rO.getListQuadruple(),
                     Objects.requireNonNull(rOL).getListQuadruple()));
         } else {
-            return null;
+            return new ResultReturn();
         }
     }
 
 
-    private static ResultReturn out() throws Throwable {
-        switch (actualToken.getToken()) {
+    private static ResultReturn out() throws RuntimeException {
+        switch (LexicalAnalysis.current.getToken()) {
             case STR:
                 List<Quadruple> listStr = new ArrayList<>();
                 listStr.add(new Quadruple(Token.PRINT.getDescription(),
-                        null, actualToken.getLexeme(), null));
+                        null, LexicalAnalysis.current.getLexeme(), null));
                 token_consume(Token.STR);
                 return new ResultReturn(listStr);
             case IDENT:
-                String varName = Parser.formatVarName(actualToken.getLexeme());
+                String varName = Parser.formatVarName(LexicalAnalysis.current.getLexeme());
 
                 //search for the variable
                 if (!Parser.searchVarScope(varName)) {
-                    throw Errors.SemanticError("Undeclared variable " + actualToken.getLexeme());
+                    throw Errors.SemanticError("Undeclared variable " + LexicalAnalysis.current.getLexeme());
+                } else {
+                    varName = Parser.getVarScope(varName);
                 }
 
-                varName = Parser.getVarScope(varName);
+
                 List<Quadruple> listIdent = new ArrayList<>();
                 listIdent.add(new Quadruple(Token.PRINT.getDescription(),
                         null, varName, null));
@@ -535,12 +557,13 @@ private static void bloco(String begin, String end) {
             case NUM_INT:
                 List<Quadruple> listInt = new ArrayList<>();
                 listInt.add(new Quadruple(Token.PRINT.getDescription(),
-                        null, actualToken.getLexeme(), null));
+                        null, LexicalAnalysis.current.getLexeme(), null));
                 token_consume(Token.NUM_INT);
                 return new ResultReturn(listInt);
             default:
+
                 List<Quadruple> list = new ArrayList<>();
-                list.add(new Quadruple(Token.PRINT.getDescription(), null, actualToken.getLexeme(), null));
+                list.add(new Quadruple(Token.PRINT.getDescription(), null, LexicalAnalysis.current.getLexeme(), null));
                 token_consume(Token.NUM_FLOAT);
                 //return the quadruple
                 return new ResultReturn(list);
@@ -551,30 +574,29 @@ private static void bloco(String begin, String end) {
 
 
     // dont have left value
-    private static ResultReturn expr() throws Throwable {
-        ResultReturn rAtrib = atrib();
-        return new ResultReturn(rAtrib.getListQuadruple(), rAtrib.getNameResult());
+    private static ResultReturn expr() throws RuntimeException {
+        return atrib();
     }
 
 
     //TODO: VERIFICAR O RATRIB
-    private static ResultReturn atrib() throws Throwable {
+    private static ResultReturn atrib() throws RuntimeException {
         ResultReturn rO = or();
         ResultReturn rAtrib = restoAtrib(rO.getNameResult());
 
         if (!rO.isLeftValue() && !rAtrib.isLeftValue()) {
             throw Errors.SemanticError("Invalid Attribution");
-        } else {
-            return new ResultReturn(false, Quadruple.concatenateLists(rO.getListQuadruple(),
-                    rAtrib.getListQuadruple()), rO.getNameResult());
         }
+
+        return new ResultReturn(false, Quadruple.concatenateLists(rO.getListQuadruple(),
+                rAtrib.getListQuadruple()), rO.getNameResult());
+
     }
 
-    private static ResultReturn restoAtrib(String value) throws Throwable {
-        if (actualToken.getToken().equals(Token.RECEIVE)) {
+    private static ResultReturn restoAtrib(String value) throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.RECEIVE)) {
             token_consume(Token.RECEIVE);
             ResultReturn rAtrib = atrib();
-            String temp = TemporaryVariable.createTemp(actualBlock);
             List<Quadruple> list = new ArrayList<>();
             list.add(new Quadruple(Token.RECEIVE.getDescription(), value, rAtrib.getNameResult()));
             return new ResultReturn(false, list, rAtrib.getNameResult());
@@ -583,7 +605,7 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn or() throws Throwable {
+    private static ResultReturn or() throws RuntimeException {
         ResultReturn rA = and();
         ResultReturn rO = restoOr(rA.getNameResult());
         if (rA.isLeftValue() && rO.isLeftValue()) {
@@ -596,8 +618,8 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn restoOr(String value) throws Throwable {
-        if (actualToken.getToken().equals(Token.OR)) {
+    private static ResultReturn restoOr(String value) throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.OR)) {
             token_consume(Token.OR);
             ResultReturn rA = and();
             ResultReturn rO = restoOr(value);
@@ -610,7 +632,7 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn and() throws Throwable {
+    private static ResultReturn and() throws RuntimeException {
         ResultReturn rN = not();
         ResultReturn rA = restoAnd(rN.getNameResult());
         if (rN.isLeftValue() && rA.isLeftValue()) {
@@ -622,8 +644,8 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn restoAnd(String value) throws Throwable {
-        if (actualToken.getToken().equals(Token.AND)) {
+    private static ResultReturn restoAnd(String value) throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.AND)) {
             token_consume(Token.AND);
             ResultReturn rN = not();
             ResultReturn rA = restoAnd(value);
@@ -636,8 +658,8 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn not() throws Throwable {
-        if (actualToken.getToken().equals(Token.NOT)) {
+    private static ResultReturn not() throws RuntimeException {
+        if (LexicalAnalysis.current.getToken().equals(Token.NOT)) {
             token_consume(Token.NOT);
             ResultReturn rNot = not();
             String temp = TemporaryVariable.createTemp(actualBlock);
@@ -649,7 +671,7 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn rel() throws Throwable {
+    private static ResultReturn rel() throws RuntimeException {
         ResultReturn rAdd = add();
         ResultReturn rRR = restoRel(rAdd.getNameResult());
 
@@ -664,8 +686,8 @@ private static void bloco(String begin, String end) {
     }
 
 
-    private static ResultReturn restoRel(String value) throws Throwable {
-        switch (actualToken.getToken()) {
+    private static ResultReturn restoRel(String value) throws RuntimeException {
+        switch (LexicalAnalysis.current.getToken()) {
             case EQUAL:
                 token_consume(Token.EQUAL);
                 ResultReturn rAdd = add();
@@ -714,7 +736,7 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn add() throws Throwable {
+    private static ResultReturn add() throws RuntimeException {
         ResultReturn rMult = mult();
         ResultReturn rAdd = restoAdd(rMult.getNameResult());
 
@@ -728,8 +750,8 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn restoAdd(String value) throws Throwable {
-        switch (actualToken.getToken()) {
+    private static ResultReturn restoAdd(String value) throws RuntimeException {
+        switch (LexicalAnalysis.current.getToken()) {
             case SUM:
                 token_consume(Token.SUM);
                 ResultReturn rMult = mult();
@@ -753,7 +775,7 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn mult() throws Throwable {
+    private static ResultReturn mult() throws RuntimeException {
         ResultReturn rUno = uno();
         ResultReturn rMult = restoMult(rUno.getNameResult());
         if (rUno.isLeftValue() && rMult.isLeftValue()) {
@@ -766,8 +788,8 @@ private static void bloco(String begin, String end) {
 
     }
 
-    private static ResultReturn restoMult(String value) throws Throwable {
-        switch (actualToken.getToken()) {
+    private static ResultReturn restoMult(String value) throws RuntimeException {
+        switch (LexicalAnalysis.current.getToken()) {
             case MULT:
                 token_consume(Token.MULT);
                 ResultReturn rUno = uno();
@@ -799,9 +821,9 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn uno() throws Throwable {
+    private static ResultReturn uno() throws RuntimeException {
 
-        switch (actualToken.getToken()) {
+        switch (LexicalAnalysis.current.getToken()) {
             case SUM:
                 token_consume(Token.SUM);
                 ResultReturn resultReturn = uno();
@@ -823,21 +845,21 @@ private static void bloco(String begin, String end) {
         }
     }
 
-    private static ResultReturn fator() throws Throwable {
-        switch (actualToken.getToken()) {
+    private static ResultReturn fator() throws RuntimeException {
+        switch (LexicalAnalysis.current.getToken()) {
             case NUM_FLOAT:
                 String temp = TemporaryVariable.createTemp(actualBlock);
                 List<Quadruple> quadruple = new ArrayList<>();
-                quadruple.add(new Quadruple(Token.RECEIVE.getDescription(), temp, actualToken.getLexeme()));
+                quadruple.add(new Quadruple(Token.RECEIVE.getDescription(), temp, LexicalAnalysis.current.getLexeme()));
                 token_consume(Token.NUM_FLOAT);
                 return new ResultReturn(false, quadruple, temp);
             case IDENT:
-                String varName = Parser.formatVarName(actualToken.getLexeme());
+                String varName = Parser.formatVarName(LexicalAnalysis.current.getLexeme());
 
                 List<Quadruple> quadrupleIdent = new ArrayList<>();
                 //undeclared variables
                 if (!Parser.searchVarScope(varName)) {
-                    throw Errors.SemanticError("Undeclared variable " + actualToken.getLexeme());
+                    throw Errors.SemanticError("Undeclared variable " + LexicalAnalysis.current.getLexeme());
                 } else {
                     varName = getVarScope(varName);
                 }
@@ -852,9 +874,10 @@ private static void bloco(String begin, String end) {
                 token_consume(Token.CLOSE_PAR);
                 return new ResultReturn(false, rR.getListQuadruple(), rR.getNameResult());
             default:
+                //todo verification
                 String temp2 = TemporaryVariable.createTemp(actualBlock);
                 List<Quadruple> quadruple3 = new ArrayList<>();
-                quadruple3.add(new Quadruple(Token.RECEIVE.getDescription(), temp2, actualToken.getLexeme()));
+                quadruple3.add(new Quadruple(Token.RECEIVE.getDescription(), temp2, LexicalAnalysis.current.getLexeme()));
                 token_consume(Token.NUM_INT);
                 return new ResultReturn(false, quadruple3, temp2);
         }
