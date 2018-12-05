@@ -15,14 +15,12 @@ import java.nio.file.Path;
  */
 public class LexicalAnalysis {
 
-    private static char caractere;
-    private static int cursor = 0;
+    public static String contentFile = null;
+    public static Current current = new Current();
     private static int state = 1;
-    private static int flag = 0;
-    private static int aux = 0;
-    private static String contentFile;
+    private static char readChar;
     public static File file;
-    private static Current current = new Current();
+    private static int cursor = -1;
 
     public static void main(String[] args) throws IOException {
         file = new File("src\\main\\java\\compiler\\input\\test").getCanonicalFile();
@@ -31,316 +29,336 @@ public class LexicalAnalysis {
         System.out.println(contentFile);
         while (current.token != Token.EOF) {
             getToken();
+            System.out.println(current.toString());
         }
 
     }
 
     private static char getChar() {
+        cursor++;
+        if (cursor >= contentFile.length()) {
+            return '$';
+        }
+        current.column++;
         return contentFile.charAt(cursor);
     }
 
-    private static void updateManipulation() {
-        cursor++;
-        if (flag == 0) {
-            current.column = 1;
-        }
-        if (flag > 0) {
-            current.column = current.column + aux;
-        }
-        aux = 1;
-        current.lexeme = String.format("%s%s", current.lexeme, caractere);
+    private static void removeChar() {
+        cursor--;
+        current.column--;
+        if (current.lexeme.length() > 0)
+            current.lexeme = current.lexeme.substring(0, current.getLexeme().length() - 1);
     }
 
-    private static void goToState(int num) {
-        cursor++;
-        state = num;
-        current.lexeme = String.format("%s%s", current.lexeme, caractere);
+    private static Current tokenAtualize(Token token) {
+
+        current.token = token;
+        removeChar();
+
+        switch (current.lexeme) {
+            case "print":
+                current.token = Token.PRINT;
+                break;
+            case "scan":
+                current.token = Token.SCAN;
+                break;
+            case "for":
+                current.token = Token.FOR;
+                break;
+            case "while":
+                current.token = Token.WHILE;
+                break;
+            case "if":
+                current.token = Token.IF;
+                break;
+            case "else":
+                current.token = Token.ELSE;
+                break;
+            case "break":
+                current.token = Token.BREAK;
+                break;
+            case "continue":
+                current.token = Token.CONTINUE;
+                break;
+            case "return":
+                current.token = Token.RETURN;
+                break;
+            case "int":
+                current.token = Token.INT;
+                break;
+            case "float":
+                current.token = Token.FLOAT;
+                break;
+
+        }
+
+        return current;
     }
+
 
     public static Current getToken() {
         state = 1;
         current.lexeme = "";
-        current.token = null;
-        while (current.token == null) {
-            if (cursor >= contentFile.length()) {
-                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EOF);
-            } else {
 
-                caractere = getChar();
+        while (true) {
+            readChar = getChar();
 
-                switch (state) {
-                    // ERROR STATE
-                    case -1:
-                        current.lexeme = "";
-                        return LexicalAnalysis.updateCurrent(current.line, current.column, Token.ERROR);
+            //eof
+            if (readChar != '$') {
+                current.lexeme = String.format("%s%s", current.getLexeme(), readChar);
+            }
 
-                    case 1:
-                        if ((contentFile.charAt(cursor) == '\n') || (contentFile.charAt(cursor) == '\r')) {
-                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
-                            cursor++;
-                            if (current.lexeme.contains(System.getProperty("line.separator"))) {
-                                current.line++;
-                                flag = 0;
-                                current.lexeme = "";
-                            }
-                        } else {
-                            if (caractere == ' ' || caractere == '\t') {
-                                cursor++;
-                                current.column++;
-                                continue;
-                            }
-                            if (Character.isAlphabetic(caractere)) {
-                                goToState(2);
-                            } else if (Character.isDigit(caractere)) {
-                                goToState(3);
-                            } else if (caractere == '"') {
-                                goToState(5);
-                            } else if (caractere == '(') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.OPEN_PAR);
-                            } else if (caractere == ')') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.CLOSE_PAR);
-                            } else if (caractere == '{') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.OPEN_BRACKET);
-                            } else if (caractere == '}') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.CLOSE_BRACKET);
-                            } else if (caractere == ';') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SEMICOLON);
-                            } else if (caractere == ',') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.COMMA);
-                            } else if (caractere == '+') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SUM);
-                            } else if (caractere == '*') {
-                                goToState(7);
-                            } else if (caractere == '/') {
-                                goToState(6);
-                            } else if (caractere == '%') {
-                                updateManipulation();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.MOD);
-                            } else if (caractere == '=') {
-                                updateManipulation();
-                                if (contentFile.charAt(cursor) == '=') {
-                                    cursor++;
-                                    current.lexeme += '=';
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EQUAL);
-                                } else {
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.RECEIVE);
-                                }
-                            } else if (caractere == '!') {
-                                updateManipulation();
-                                if (contentFile.charAt(cursor) == '=') {
-                                    cursor++;
-                                    current.lexeme += '=';
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.DIFFERENT);
-                                } else {
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NOT);
-                                }
-                            } else if (caractere == '>') {
-                                updateManipulation();
-                                if (contentFile.charAt(cursor) == '=') {
-                                    cursor++;
-                                    current.lexeme += '=';
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BIGGER_EQUAL);
-                                } else {
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BIGGER);
-                                }
-                            } else if (caractere == '<') {
-                                updateManipulation();
-                                if (contentFile.charAt(cursor) == '=') {
-                                    cursor++;
-                                    current.lexeme += '=';
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SMALLER_EQUAL);
-                                } else {
-                                    return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SMALLER);
-                                }
-                            } else if (cursor > contentFile.length()) {
-                                state = 9;
-                            }
-                        }
-                        break;
+            if (readChar == '\n') {
+                current.lexeme = current.getLexeme().substring(0, current.getLexeme().length() - 1);
+                current.line++;
+                current.column = 1;
+            } else if (state == 1) {
 
-                    // state verification of tokens: IDENT,KEYWORDS
-                    case 2:
-                        if (current.lexeme.matches("[a-zA-Z]+[\\d]*") && Character.isAlphabetic(caractere)) {
-                            goToState(2);
-                        } else {
+                if (readChar == ' ' || readChar == '\t') {
+                    current.lexeme = current.getLexeme().substring(0, current.getLexeme().length() - 1);
+                } else if (readChar == '$') {
+                    return tokenAtualize(Token.EOF);
 
-                            state = 9;
-                        }
-                        break;
+                } else if (Character.isAlphabetic(readChar)) {
+                    state = 2;
+                } else if (Character.isDigit(readChar)) {
+                    state = 4;
+                } else if (readChar == '%') {
+                    state = 9;
+                } else if (readChar == '/') {
+                    state = 10;
+                } else if (readChar == '-') {
+                    state = 11;
+                } else if (readChar == '+') {
+                    state = 12;
+                } else if (readChar == '=') {
+                    state = 13;
+                } else if (readChar == ',') {
+                    state = 14;
+                } else if (readChar == ';') {
+                    state = 15;
+                } else if (readChar == '(') {
+                    state = 16;
+                } else if (readChar == ')') {
+                    state = 17;
+                } else if (readChar == '*') {
+                    state = 18;
+                } else if (readChar == '"') {
+                    state = 21;
+                } else if (readChar == '&') {
+                    state = 24;
+                } else if (readChar == '|') {
+                    state = 26;
+                } else if (readChar == '!') {
+                    state = 28;
+                } else if (readChar == '>') {
+                    state = 31;
+                } else if (readChar == '<') {
+                    state = 33;
+                } else if (readChar == '{') {
+                    state = 35;
+                } else if (readChar == '}') {
+                    state = 36;
+                } else {
+                    state = -1;
+                }
 
-                    // state verification of number token (int)
-                    case 3:
-                        if (Character.isDigit(caractere)) {
-                            goToState(3);
-                        } else if (caractere == '.') {
-                            goToState(4);
-                        } else if (Character.isAlphabetic(caractere)) {
-                            state = -1;
-                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
-                        } else if (!Character.isDigit(caractere) && !(caractere == '.')) {
-                            if (current.lexeme.matches("(\\d)+")) {
-                                current.column += aux;
-                                aux = current.lexeme.length();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NUM_INT);
-                            }
-                        }
-                        break;
-                    //state verification of number token (float)
-                    case 4:
-                        if (Character.isDigit(caractere)) {
-                            goToState(4);
-                        } else if (caractere == '.') {
-                            state = -1;
-                        } else {
-                            if (current.lexeme.matches("(\\d)+[.](\\d)+")) {
-                                current.column += aux;
-                                aux = current.lexeme.length();
-                                return LexicalAnalysis.updateCurrent(current.line, current.column, Token.NUM_FLOAT);
-                            }
-                        }
-                        break;
-
-                    // state verification of string token
-                    case 5:
-                        if (caractere == '"') {
-                            goToState(9);
-                        } else if (current.lexeme.matches("\".*")) {
-                            goToState(5);
-                        }
-                        break;
-
-                    // state verification of code comments or div token
-                    case 6:
-                        if (contentFile.charAt(cursor) == '*') {
-                            while (!current.lexeme.endsWith("*/")) {
-                                if (current.lexeme.endsWith(System.getProperty("line.separator"))) {
-                                    current.line++;
-                                    flag = 0;
-                                }
-                                cursor++;
-                                current.lexeme = String.format("%s%s", current.lexeme, caractere);
-                                caractere = getChar();
-                            }
-                            current.lexeme = "";
-                            state = 1;
-                            break;
-                        } else if (caractere == '/') {
-                            while (!current.lexeme.endsWith(System.getProperty("line.separator"))) {
-                                cursor++;
-                                caractere = getChar();
-                                current.lexeme = String.format("%s%s", current.lexeme, caractere);
-                            }
-                            current.lexeme = "";
-                            current.line++;
-                            flag = 0;
-                            state = 1;
-                        } else {
-                            cursor++;
-                            current.column += aux;
-                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.DIV);
-                        }
-
-                        break;
-
-                    // state verification of potency (**) or just multiply  7
-                    case 7:
-                        if (caractere == '*') {
-                            cursor++;
-                            current.column += aux;
-                            current.lexeme = String.format("%s%s", current.lexeme, caractere);
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.POTENCY);
-                        } else {
-                            cursor++;
-                            current.column += aux;
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.MULT);
-                        }
-
-
-                        //final state, return of tokens : ident, str
-                    case 9:
-                        if (flag == 0) {
-                            current.column = 1;
-                        }
-                        if (flag > 0) {
-                            current.column = current.column + aux;
-                        }
-                        flag++;
-
-                        if (current.lexeme.equals("print")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.PRINT);
-                        } else if (current.lexeme.equals("scan")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.SCAN);
-                        } else if (current.lexeme.equals("return")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.RETURN);
-                        } else if (current.lexeme.equals("int")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.INT);
-                        } else if (current.lexeme.equals("float")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.FLOAT);
-                        } else if (current.lexeme.equals("break")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BREAK);
-                        } else if (current.lexeme.equals("continue")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.CONTINUE);
-                        } else if (current.lexeme.equals("for")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.FOR);
-                        } else if (current.lexeme.equals("while")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.WHILE);
-                        } else if (current.lexeme.equals("if")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.IF);
-                        } else if (current.lexeme.equals("else")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.ELSE);
-                        } else if (current.lexeme.equals("break")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.BREAK);
-                        } else if (current.lexeme.matches("[a-zA-Z]+[\\d]*")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.IDENT);
-                        } else if (current.lexeme.matches("\".*\"")) {
-                            aux = current.lexeme.length() - 1;
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.STR);
-                        } else if (current.lexeme.matches("\\z")) {
-                            aux = current.lexeme.length();
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EOF);
-                        } else {
-                            return LexicalAnalysis.updateCurrent(current.line, current.column, Token.ERROR);
-                        }
-
+            } else if (state == 2) {
+                //Token Identifier
+                if (Character.isAlphabetic(readChar) ||
+                        Character.isDigit(readChar) && readChar != '$') {
+                    state = 2;
+                } else {
+                    removeChar();
+                    state = 3;
+                }
+            } else if (state == 3) {
+                return tokenAtualize(Token.IDENT);
+            } else if (state == 4) {
+                //Token Number
+                if (Character.isDigit(readChar)) {
+                    state = 4;
+                } else if (readChar == '.') {
+                    state = 6;
+                } else if (Character.isAlphabetic(readChar) && readChar != '$') {
+                    state = 2;
+                } else {
+                    removeChar();
+                    state = 5;
+                }
+            } else if (state == 5) {
+                return tokenAtualize(Token.NUM_INT);
+            } else if (state == 6) {
+                if (Character.isDigit(readChar)) {
+                    state = 7;
+                } else {
+                    removeChar();
+                    state = -1;
+                }
+            } else if (state == 7) {
+                if (Character.isDigit(readChar)) {
+                    state = 7;
+                } else {
+                    removeChar();
+                    state = 23;
                 }
             }
-        }
 
-        return LexicalAnalysis.updateCurrent(current.line, current.column, Token.EOF);
+
+//            else if (state == 8) {
+//
+            else if (state == 9) {
+                return tokenAtualize(Token.MOD);
+            } else if (state == 10) {
+                if (readChar == '/') {
+                    //line comment
+                    state = -2;
+                } else if (readChar == '*') {
+                    //block comment
+                    state = -3;
+                } else {
+                    return tokenAtualize(Token.DIV);
+                }
+            } else if (state == 11) {
+                return tokenAtualize(Token.SUBTRACTION);
+            } else if (state == 12) {
+                return tokenAtualize(Token.SUM);
+            } else if (state == 13) {
+                if (readChar == '=') {
+                    state = 30;
+                } else {
+                    return tokenAtualize(Token.RECEIVE);
+                }
+            } else if (state == 14) {
+                return tokenAtualize(Token.COMMA);
+            } else if (state == 15) {
+                return tokenAtualize(Token.SEMICOLON);
+            } else if (state == 16) {
+                return tokenAtualize(Token.OPEN_PAR);
+            } else if (state == 17) {
+                return tokenAtualize(Token.CLOSE_PAR);
+            } else if (state == 18) {
+                if (readChar == '*') {
+                    state = 20;
+                } else {
+                    removeChar();
+                    state = 19;
+                }
+            } else if (state == 19) {
+                return tokenAtualize(Token.MULT);
+            } else if (state == 20) {
+                return tokenAtualize(Token.POTENCY);
+            } else if (state == 21) {
+                //STRING
+                if (readChar == '\\') {
+                    state = 39;
+                } else if (readChar == '"') {
+                    state = 22;
+                } else {
+                    state = 21;
+                }
+
+            } else if (state == 22) {
+                current.lexeme = current.getLexeme().substring(1, current.getLexeme().length() - 1);
+                return tokenAtualize(Token.STR);
+            } else if (state == 23) {
+                return tokenAtualize(Token.NUM_FLOAT);
+            } else if (state == 24) {
+                if (readChar == '&') {
+                    state = 25;
+                } else {
+                    state = -1;
+                }
+            } else if (state == 25) {
+                return tokenAtualize(Token.AND);
+            } else if (state == 26) {
+                if (readChar == '|') {
+                    state = 27;
+                } else {
+                    state = -1;
+                }
+            } else if (state == 27) {
+                return tokenAtualize(Token.OR);
+            } else if (state == 28) {
+                if (readChar == '=') {
+                    state = 29;
+                } else {
+                    return tokenAtualize(Token.NOT);
+                }
+            } else if (state == 29) {
+                return tokenAtualize(Token.DIFFERENT);
+            } else if (state == 30) {
+                return tokenAtualize(Token.EQUAL);
+            } else if (state == 31) {
+                if (readChar == '=') {
+                    state = 32;
+                } else {
+                    return tokenAtualize(Token.BIGGER);
+                }
+            } else if (state == 32) {
+                return tokenAtualize(Token.BIGGER_EQUAL);
+            } else if (state == 33) {
+                if (readChar == '=') {
+                    state = 34;
+                } else {
+                    return tokenAtualize(Token.SMALLER);
+                }
+            } else if (state == 34) {
+                return tokenAtualize(Token.SMALLER_EQUAL);
+            } else if (state == 35) {
+                return tokenAtualize(Token.OPEN_BRACKET);
+            } else if (state == 36) {
+                return tokenAtualize(Token.CLOSE_BRACKET);
+            } else if (state == -2) {
+                while (readChar != '\r') {
+                    readChar = getChar();
+                    if (readChar == '$') {
+                        break;
+                    }
+                }
+                current.line++;
+                current.column = 1;
+                current.lexeme = current.getLexeme().substring(0, current.getLexeme().length() - 3);
+                state = 1;
+            } else if (state == -3) {
+                if (readChar != '*' && readChar != '$') {
+                    state = -3;
+                } else {
+                    state = -4;
+                }
+
+            } else if (state == 39) {
+                if (readChar != 'n') {
+                    current.lexeme = current.getLexeme().substring(0, current.getLexeme().length() - 2) + "\n";
+
+                } else {
+                    current.lexeme = current.getLexeme().substring(0, current.getLexeme().length() - 2) + "\t";
+
+                }
+
+                state = 21;
+            } else if (state == -4) {
+                if (readChar == '/' || readChar == '$') {
+                    current.lexeme = current.getLexeme().substring(current.getLexeme().length() - 2, current.getLexeme().length() - 2);
+                    state = 1;
+                } else if (readChar == '*') {
+                    state = -4;
+                } else {
+                    state = -3;
+                }
+            } else if (state == -1) {
+                //ERROR STATE
+                removeChar();
+
+                return tokenAtualize(Token.ERROR);
+            }
+
+        }
     }
 
-    private static String loadArq(Path name) throws IOException {
+    public static String loadArq(Path name) throws IOException {
         return new String(Files.readAllBytes(name));
     }
 
-    private static Current updateCurrent(int line, int column, Token token) {
-
-        current.line = line;
-        current.column = column;
-        current.token = token;
-        System.out.println(current.toString());
-        return current;
-    }
 
 }

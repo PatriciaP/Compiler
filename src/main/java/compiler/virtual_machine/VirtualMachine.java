@@ -39,6 +39,7 @@ public class VirtualMachine {
         virtualMachine.start(fileName);
 
 
+
     }
 
     private void createLabels() {
@@ -77,10 +78,11 @@ public class VirtualMachine {
         LexicalAnalysis.file = new File("src\\main\\java\\compiler\\input\\test").getCanonicalFile();
         LexicalAnalysis.contentFile = LexicalAnalysis.loadArq(LexicalAnalysis.file.toPath());
         System.out.println(LexicalAnalysis.contentFile);
-        this.codeResult = Parser.parser();
         this.populateOperators();
+        this.codeResult = Parser.parser();
         this.createLabels();
         this.run();
+        System.exit(0);
     }
 
 
@@ -109,7 +111,7 @@ public class VirtualMachine {
                     expression = vars.get(expression);
                 }
 
-                int newPC;
+                int newPC = -1;
 
                 if (function.equals("if")) {
                     //function if
@@ -200,13 +202,13 @@ public class VirtualMachine {
                 }
 
                 if (this.vars.containsKey(this.codeResult.getListQuadruple().get(pc).getArg1())) {
-                    String type = (String) this.vars.get(this.codeResult.getListQuadruple().get(pc).getArg1());
-                    if (type.equals("int")) {
+                    Object type = this.vars.get(this.codeResult.getListQuadruple().get(pc).getArg1());
+                    if (type.equals("0")) {
                         result = Integer.parseInt(String.valueOf(result));
                     }
                 }
 
-                this.vars.put(this.codeResult.getListQuadruple().get(pc).getArg1(), String.valueOf(result));
+                this.vars.put(this.codeResult.getListQuadruple().get(pc).getArg1(), result);
 
 
             } else if (this.codeResult.getListQuadruple().get(pc).getOp().matches("scan||print")) {
@@ -215,14 +217,21 @@ public class VirtualMachine {
 
                 String op1 = this.codeResult.getListQuadruple().get(pc).getArg2();
 
+                if (vars.containsKey(op1)) {
+                    op1 = String.valueOf(vars.get(op1));
+                }
+
                 String op2 = this.codeResult.getListQuadruple().get(pc).getResult();
 
+                if (vars.containsKey(op2)) {
+                    op2 = String.valueOf(vars.get(op2));
+                }
 
                 if (function.equals("scan")) {
 
                     if (this.codeResult.getListQuadruple().get(pc).getArg1() != null) {
                         String type = (String) this.vars.get(this.codeResult.getListQuadruple().get(pc).getArg1());
-                        if (type.equals("int")) {
+                        if (type.equals("0")) {
                             this.vars.put(this.codeResult.getListQuadruple().get(pc).getArg1(), Integer.parseInt((String) scan(op1, op2)));
                         } else {
                             this.vars.put(this.codeResult.getListQuadruple().get(pc).getArg1(), Float.parseFloat((String) scan(op1, op2)));
@@ -248,11 +257,11 @@ public class VirtualMachine {
 
     private int ifFunction(Object expression, String label1, String label2) {
 
-        if (expression.equals("false")) {
+        if (expression.equals("0")) {
             return labels.get(label2);
         }
-
         return -1;
+
     }
 
 

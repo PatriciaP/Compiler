@@ -17,7 +17,7 @@ public class Current {
 
     public Current() {
         line = 1;
-        column = 0;
+        column = 1;
         token = null;
         lexeme = "";
     }

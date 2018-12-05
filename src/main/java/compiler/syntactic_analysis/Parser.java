@@ -20,7 +20,7 @@ public class Parser {
 
 
     // name and type
-    private static HashMap<String, Token> symbolsTable = new HashMap<>();
+    private static HashMap<String, String> symbolsTable = new HashMap<>();
     private static List<String> idList = new ArrayList<>();
     //Block Scope
     private static int actualBlock = -1;
@@ -157,13 +157,13 @@ public class Parser {
 
     }
 
-    private static Token type() throws RuntimeException {
+    private static String type() throws RuntimeException {
         if (LexicalAnalysis.current.getToken().equals(Token.FLOAT)) {
             token_consume(Token.FLOAT);
-            return Token.FLOAT;
+            return Token.FLOAT.getDescription();
         } else {
             token_consume(Token.INT);
-            return Token.INT;
+            return Token.INT.getDescription();
         }
     }
 
@@ -213,24 +213,24 @@ public class Parser {
 
     private static ResultReturn stmtList(String begin, String end) throws RuntimeException {
 
-        if (LexicalAnalysis.current.getToken().equals(Token.FOR)
-                || LexicalAnalysis.current.getToken().equals(Token.SCAN)
-                || LexicalAnalysis.current.getToken().equals(Token.PRINT)
-                || LexicalAnalysis.current.getToken().equals(Token.WHILE)
-                || LexicalAnalysis.current.getToken().equals(Token.SUM)
-                || LexicalAnalysis.current.getToken().equals(Token.NOT)
-                || LexicalAnalysis.current.getToken().equals(Token.SUBTRACTION)
-                || LexicalAnalysis.current.getToken().equals(Token.NUM_INT)
-                || LexicalAnalysis.current.getToken().equals(Token.NUM_FLOAT)
-                || LexicalAnalysis.current.getToken().equals(Token.IDENT)
-                || LexicalAnalysis.current.getToken().equals(Token.OPEN_PAR)
-                || LexicalAnalysis.current.getToken().equals(Token.IF)
+        if (LexicalAnalysis.current.getToken().equals(Token.NOT)
                 || LexicalAnalysis.current.getToken().equals(Token.OPEN_BRACKET)
+                || LexicalAnalysis.current.getToken().equals(Token.SUM)
+                || LexicalAnalysis.current.getToken().equals(Token.SUBTRACTION)
+                || LexicalAnalysis.current.getToken().equals(Token.SEMICOLON)
+                || LexicalAnalysis.current.getToken().equals(Token.IDENT)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_FLOAT)
+                || LexicalAnalysis.current.getToken().equals(Token.NUM_INT)
                 || LexicalAnalysis.current.getToken().equals(Token.BREAK)
                 || LexicalAnalysis.current.getToken().equals(Token.CONTINUE)
-                || LexicalAnalysis.current.getToken().equals(Token.INT)
                 || LexicalAnalysis.current.getToken().equals(Token.FLOAT)
-                || LexicalAnalysis.current.getToken().equals(Token.SEMICOLON)
+                || LexicalAnalysis.current.getToken().equals(Token.FOR)
+                || LexicalAnalysis.current.getToken().equals(Token.IF)
+                || LexicalAnalysis.current.getToken().equals(Token.INT)
+                || LexicalAnalysis.current.getToken().equals(Token.PRINT)
+                || LexicalAnalysis.current.getToken().equals(Token.SCAN)
+                || LexicalAnalysis.current.getToken().equals(Token.WHILE)
+                || LexicalAnalysis.current.getToken().equals(Token.OPEN_BRACKET)
                 || LexicalAnalysis.current.getToken().equals(Token.RETURN)) {
             ResultReturn rStmt = stmt(begin, end);
             ResultReturn rStmtList = stmtList(begin, end);
@@ -444,7 +444,7 @@ public class Parser {
 
     private static ResultReturn declaration() throws RuntimeException {
         List<Quadruple> list = new ArrayList<>();
-        Token t = type();
+        String t = type();
         List<String> varList = identList();
         List<String> declarationList = new ArrayList<>();
 
@@ -461,11 +461,11 @@ public class Parser {
                 Quadruple quadruple = new Quadruple(Token.RECEIVE.getDescription(), varName, "0");
                 //add the variable in the symbol table
 
-                if (t.getDescription().equals(Token.FLOAT.getDescription())) {
+                if (t.equals(Token.FLOAT.getDescription())) {
                     quadruple.setArg2("0.0");
-                    symbolsTable.put(varName, Token.FLOAT);
+                    symbolsTable.put(varName, "float");
                 } else {
-                    symbolsTable.put(varName, Token.INT);
+                    symbolsTable.put(varName, "int");
                 }
 
                 list.add(quadruple);
@@ -849,9 +849,10 @@ public class Parser {
         switch (LexicalAnalysis.current.getToken()) {
             case NUM_FLOAT:
                 String temp = TemporaryVariable.createTemp(actualBlock);
-                List<Quadruple> quadruple = new ArrayList<>();
-                quadruple.add(new Quadruple(Token.RECEIVE.getDescription(), temp, LexicalAnalysis.current.getLexeme()));
+                String lexeme = LexicalAnalysis.current.getLexeme();
                 token_consume(Token.NUM_FLOAT);
+                List<Quadruple> quadruple = new ArrayList<>();
+                quadruple.add(new Quadruple(Token.RECEIVE.getDescription(), temp, lexeme, null));
                 return new ResultReturn(false, quadruple, temp);
             case IDENT:
                 String varName = Parser.formatVarName(LexicalAnalysis.current.getLexeme());
@@ -877,8 +878,10 @@ public class Parser {
                 //todo verification
                 String temp2 = TemporaryVariable.createTemp(actualBlock);
                 List<Quadruple> quadruple3 = new ArrayList<>();
-                quadruple3.add(new Quadruple(Token.RECEIVE.getDescription(), temp2, LexicalAnalysis.current.getLexeme()));
+                String lexInt = LexicalAnalysis.current.getLexeme();
                 token_consume(Token.NUM_INT);
+                quadruple3.add(new Quadruple(Token.RECEIVE.getDescription(), temp2, lexInt));
+
                 return new ResultReturn(false, quadruple3, temp2);
         }
 
