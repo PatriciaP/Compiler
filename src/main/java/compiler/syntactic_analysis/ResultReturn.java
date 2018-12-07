@@ -17,26 +17,27 @@ public class ResultReturn {
     //IF FALSE, MEANS THAT THE VALUE CAN NOT SHOW ON THE LEFT SIDE of '='
     private boolean leftValue;
 
-    private List<Quadruple> listQuadruple;
+    public List<Quadruple> listQuadruple;
 
     private String nameResult;
 
     public ResultReturn() {
     }
 
-    public ResultReturn(List<Quadruple> listQuadruple) {
-        this.listQuadruple = listQuadruple;
-    }
-
-    public ResultReturn(boolean leftValue, List<Quadruple> listQuadruple, String nameResult) {
+    public ResultReturn(boolean leftValue, List<Quadruple>  listQuadruple, String nameResult) {
         this.leftValue = leftValue;
         this.listQuadruple = listQuadruple;
         this.nameResult = nameResult;
     }
 
-    public ResultReturn(List<Quadruple> listQuadruple, String nameResult) {
+    public ResultReturn(List<Quadruple>  listQuadruple, String nameResult) {
         this.listQuadruple = listQuadruple;
         this.nameResult = nameResult;
+    }
+
+    public ResultReturn(boolean leftValue, List<Quadruple>  listQuadruple) {
+        this.leftValue = leftValue;
+        this.listQuadruple = listQuadruple;
     }
 
     public boolean isLeftValue() {
@@ -47,11 +48,11 @@ public class ResultReturn {
         this.leftValue = leftValue;
     }
 
-    public List<Quadruple> getListQuadruple() {
+    public List<Quadruple>  getListQuadruple() {
         return listQuadruple;
     }
 
-    public void setListQuadruple(List<Quadruple> listQuadruple) {
+    public void setListQuadruple(List<Quadruple>  listQuadruple) {
         this.listQuadruple = listQuadruple;
     }
 
@@ -59,9 +60,17 @@ public class ResultReturn {
         return nameResult;
     }
 
+
+    @Override
+    public String toString() {
+        return "ResultReturn{" +
+                "leftValue=" + leftValue +
+                ", listQuadruple=" + listQuadruple +
+                ", nameResult='" + nameResult + '\'' +
+                '}';
+    }
+
     public void setNameResult(String nameResult) {
         this.nameResult = nameResult;
     }
-
-
 }

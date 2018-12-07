@@ -11,19 +11,9 @@ public class TemporaryVariable {
 
     public static String createTemp(int actualBlock) {
 
-        if (freeTemps.size() > 0) {
-            return freeTemps.get(freeTemps.size() - 1);
-        }
         tempSeed++;
-        return "_block_" + actualBlock + " _temp_" + tempSeed;
+        return   " _temp_" + tempSeed;
 
     }
 
-    public static void freeLabels(String temp) {
-        for (int i = 0; i < freeTemps.size(); i++) {
-            if (!freeTemps.get(i).equals(temp)) {
-                freeTemps.add(temp);
-            }
-        }
-    }
 }

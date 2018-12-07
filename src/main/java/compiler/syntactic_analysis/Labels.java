@@ -15,22 +15,13 @@ public class Labels {
     //labels
     public static int labelSeed = 0;
     public static List<String> freeLabels = new ArrayList<>();
+    static int cont = 0;
 
     public static String createLabel() {
 
-        if (freeLabels.size() > 0) {
-            return freeLabels.get(freeLabels.size() - 1);
-        }
-        labelSeed++;
-        return "_label_" + labelSeed;
+        return "_label_"+cont++;
 
     }
 
-    public static void freeLabels(String label) {
-        for (int i = 0; i < freeLabels.size(); i++) {
-            if (!freeLabels.get(i).equals(label)) {
-                freeLabels.add(label);
-            }
-        }
-    }
+
 }

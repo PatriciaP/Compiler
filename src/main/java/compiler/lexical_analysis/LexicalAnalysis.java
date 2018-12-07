@@ -16,14 +16,14 @@ import java.nio.file.Path;
 public class LexicalAnalysis {
 
     public static String contentFile = null;
-    public static Current current = new Current();
+    private static Current current = new Current();
     private static int state = 1;
     private static char readChar;
     public static File file;
     private static int cursor = -1;
 
     public static void main(String[] args) throws IOException {
-        file = new File("src\\main\\java\\compiler\\input\\test").getCanonicalFile();
+       file = new File("/home/renan/IdeaProjects/compiler/src/main/java/compiler/input/test").getCanonicalFile();
         System.out.println(file);
         contentFile = loadArq(file.toPath());
         System.out.println(contentFile);
@@ -310,7 +310,7 @@ public class LexicalAnalysis {
             } else if (state == 36) {
                 return tokenAtualize(Token.CLOSE_BRACKET);
             } else if (state == -2) {
-                while (readChar != '\r') {
+                while (readChar != '\n') {
                     readChar = getChar();
                     if (readChar == '$') {
                         break;

@@ -7,10 +7,21 @@ import compiler.syntactic_analysis.ResultReturn;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
 public class VirtualMachine {
+
+
+    public static int lenghtVariables;
+
+    public static List<Variables> variablesList;
+
+    private static int lenVariablesMachine;
+
+    private static List<Variables> listVariablesMachine;
+
 
     private ResultReturn codeResult;
 
@@ -37,7 +48,6 @@ public class VirtualMachine {
 
         VirtualMachine virtualMachine = new VirtualMachine();
         virtualMachine.start(fileName);
-
 
 
     }
@@ -75,7 +85,7 @@ public class VirtualMachine {
 
     private void start(String fileName) throws Throwable {
 
-        LexicalAnalysis.file = new File("src\\main\\java\\compiler\\input\\test").getCanonicalFile();
+        LexicalAnalysis.file = new File("/home/renan/IdeaProjects/compiler/src/main/java/compiler/input/test").getCanonicalFile();
         LexicalAnalysis.contentFile = LexicalAnalysis.loadArq(LexicalAnalysis.file.toPath());
         System.out.println(LexicalAnalysis.contentFile);
         this.populateOperators();
@@ -86,7 +96,108 @@ public class VirtualMachine {
     }
 
 
-    private void run() {
+    private void run(Quadruple lista) {
+
+        Quadruple quadruple = lista;
+
+        while (quadruple != null) {
+
+            //int 1 -> float, int 0 -> int
+            int type;
+            String op = quadruple.op;
+            String opquadruple;
+            float value;
+            String str;
+
+            switch (op) {
+
+                case "=":
+                    type = Integer.parseInt(quadruple.arg2);
+                    //float
+                    if(type == 1){
+                        value = Float.parseFloat(quadruple.getArg2());
+                        listVariablesMachine.add(new Variables(quadruple.getArg1(), value, 1));
+                    }else {
+                        value = Integer.parseInt(quadruple.getArg2());
+                        listVariablesMachine.add(new Variables(quadruple.getArg1(), value, 0));
+                    }
+
+                    break;
+                case "==":
+                    type = Integer.parseInt(quadruple.arg2);
+                    if(quadruple.getArg2().equals(quadruple.getResult())){
+                        type = 1;
+                    } else {
+                        type = 0;
+                    }
+                    //float
+                    if(type == 1){
+                        value = quadruple.getArg2().equals(quadruple.getResult());
+                        listVariablesMachine.add(new Variables(quadruple.getArg1(), value, 1));
+                    }else {
+                        value = Integer.parseInt(quadruple.getArg2());
+                        listVariablesMachine.add(new Variables(quadruple.getArg1(), value, 0));
+                    }
+                    break;
+                case ">":
+                    result = division(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case ">=":
+                    result = mod(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case "<":
+                    result = mult(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case "<=":
+                    result = attribution(op1, op2);
+                    break;
+                case "!=":
+                    result = biggerEqual(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case "!":
+                    result = smallerEqual(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case "&&":
+                    result = smaller(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case "||":
+                    result = bigger(Float.parseFloat((String) op1), Float.parseFloat((String) op2));
+                    break;
+                case "if":
+                    result = equals(op1, op2);
+                    break;
+                case "jump":
+                    result = difference(op1, op2);
+                    break;
+                case "call":
+                    result = and(op1, op2);
+                    break;
+                case "print":
+                    result = or(op1, op2);
+                    break;
+                case "scan":
+                    result = not(op1, op2);
+                    break;
+                case "+":
+                    result = not(op1, op2);
+                    break;
+                case "-":
+                    result = not(op1, op2);
+                    break;
+                case "*":
+                    result = not(op1, op2);
+                    break;
+                case "/":
+                    result = not(op1, op2);
+                    break;
+                case "%":
+                    result = not(op1, op2);
+                    break;
+
+            }
+
+
+        }
 
         // calls: scan, print
         // jumps: if, jump
@@ -255,6 +366,20 @@ public class VirtualMachine {
     }
 
 
+    private List<Quadruple> getLabel(List<Quadruple> aux, String lexeme){
+        for (int i = 0; i < aux.size() ; i++) {
+            if(aux.get(i).getArg1().equals("label")){
+                if(aux.get(i).getArg2().equals(lexeme)){
+                    return aux;
+                }
+            }
+        }
+        return null;
+    }
+
+
+
+
     private int ifFunction(Object expression, String label1, String label2) {
 
         if (expression.equals("0")) {
@@ -371,7 +496,6 @@ public class VirtualMachine {
         }
         return null;
     }
-
 
 
 }
