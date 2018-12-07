@@ -158,9 +158,9 @@ public class Parser {
             ResultReturn rStmtList = stmtList(begin, end);
             resultReturn.setListQuadruple(Quadruple.concatenateLists(Objects.requireNonNull(rStmt).getListQuadruple(), rStmtList.getListQuadruple()));
         } else if (current.getToken().equals(Token.FLOAT) || current.getToken().equals(Token.INT) ) {
-           ResultReturn rD = declaration();
-           ResultReturn rS = stmtList(begin, end);
-           resultReturn.setListQuadruple(Quadruple.concatenateLists(rD.getListQuadruple(),rS.getListQuadruple()));;
+            ResultReturn rD = declaration();
+            ResultReturn rS = stmtList(begin, end);
+            resultReturn.setListQuadruple(Quadruple.concatenateLists(rD.getListQuadruple(),rS.getListQuadruple()));;
         }
 
         return resultReturn;
@@ -429,7 +429,7 @@ public class Parser {
         resultReturn.listQuadruple.add(new Quadruple("label",
                 labelExit, null, null));
 
-       return resultReturn;
+        return resultReturn;
 
     }
 
@@ -513,13 +513,13 @@ public class Parser {
     }
 
     private static ResultReturn or() throws RuntimeException {
-      ResultReturn aux, aux2;
-      aux = and();
-      aux2 = restoOr(aux.getNameResult());
-      aux.setListQuadruple(Quadruple.concatenateLists(aux.getListQuadruple(),aux2.getListQuadruple()));
-      aux.setNameResult(aux2.getNameResult());
-      aux.setLeftValue(aux.isLeftValue() & aux2.isLeftValue());
-      return aux;
+        ResultReturn aux, aux2;
+        aux = and();
+        aux2 = restoOr(aux.getNameResult());
+        aux.setListQuadruple(Quadruple.concatenateLists(aux.getListQuadruple(),aux2.getListQuadruple()));
+        aux.setNameResult(aux2.getNameResult());
+        aux.setLeftValue(aux.isLeftValue() & aux2.isLeftValue());
+        return aux;
 
     }
 
@@ -746,10 +746,10 @@ public class Parser {
                 aux = uno();
                 aux.setLeftValue(false);
             case SUBTRACTION:
-              token_consume(Token.SUBTRACTION);
-              aux = uno();
-              aux.listQuadruple.add(new Quadruple("-",aux.getNameResult(),"0",aux.getNameResult()));
-              aux.setLeftValue(false);
+                token_consume(Token.SUBTRACTION);
+                aux = uno();
+                aux.listQuadruple.add(new Quadruple("-",aux.getNameResult(),"0",aux.getNameResult()));
+                aux.setLeftValue(false);
             default:
                 aux = fator();
 

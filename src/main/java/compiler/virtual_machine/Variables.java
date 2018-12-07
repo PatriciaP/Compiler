@@ -4,21 +4,14 @@ public class Variables {
 
     public String varId;
 
-    public int levelInt;
+    public float level;
 
-    public float levelFloat;
+    public float type;
 
-    public int type;
-
-    public Variables(String varId, int levelInt, int type) {
+    public Variables(String varId, float level, float type) {
         this.varId = varId;
-        this.levelInt = levelInt;
+        this.level = level;
         this.type = type;
     }
 
-    public Variables(String varId, float levelFloat, int type) {
-        this.varId = varId;
-        this.levelFloat = levelFloat;
-        this.type = type;
-    }
 }

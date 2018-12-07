@@ -5,99 +5,99 @@ import java.util.List;
 
 /**
  * Which instruction has a struct with a quadruple
- * (operation, address1, arg2, result)
+ * (param1eration, address1, param3, param4)
  */
 public class Quadruple {
 
 
 
-    public String op;
+    public String param1;
 
-    public String arg1;
+    public String param2;
 
-    public String arg2;
+    public String param3;
 
-    public String result;
+    public String param4;
 
 
     public Quadruple() {
     }
 
-    public Quadruple(String op) {
-        this.op = op;
+    public Quadruple(String param1) {
+        this.param1 = param1;
     }
 
-    //params operators
-    public Quadruple(String op, String arg1) {
-        this.op = op;
-        this.arg1 = arg1;
+    //params param1erators
+    public Quadruple(String param1, String param2) {
+        this.param1 = param1;
+        this.param2 = param2;
     }
 
-    // unary operators  (x = y)
-    public Quadruple(String op, String arg1, String arg2) {
-        this.op = op;
-        this.arg1 = arg1;
-        this.arg2 = arg2;
+    // unary param1erators  (x = y)
+    public Quadruple(String param1, String param2, String param3) {
+        this.param1 = param1;
+        this.param2 = param2;
+        this.param3 = param3;
     }
 
 
-    //example x = y op z, arg1: y, arg2: z and reuslt: x
-    public Quadruple(String op, String arg1, String arg2, String result) {
-        this.op = op;
-        this.arg1 = arg1;
-        this.arg2 = arg2;
-        this.result = result;
+    //example x = y param1 z, param2: y, param3: z and reuslt: x
+    public Quadruple(String param1, String param2, String param3, String param4) {
+        this.param1 = param1;
+        this.param2 = param2;
+        this.param3 = param3;
+        this.param4 = param4;
     }
 
     public static List<Quadruple> concatenateLists(List<Quadruple> list1, List<Quadruple> list2) {
-        List<Quadruple> resultList = new ArrayList<>();
+        List<Quadruple> param4List = new ArrayList<>();
         if (list1 != null)
-            resultList = list1;
+            param4List = list1;
         if (list2 != null)
-            resultList.addAll(list2);
-        return resultList;
+            param4List.addAll(list2);
+        return param4List;
     }
 
 
-    public String getOp() {
-        return op;
+    public String getparam1() {
+        return param1;
     }
 
-    public void setOp(String op) {
-        this.op = op;
+    public void setparam1(String param1) {
+        this.param1 = param1;
     }
 
-    public String getArg1() {
-        return arg1;
+    public String getparam2() {
+        return param2;
     }
 
-    public void setArg1(String arg1) {
-        this.arg1 = arg1;
+    public void setparam2(String param2) {
+        this.param2 = param2;
     }
 
-    public String getArg2() {
-        return arg2;
+    public String getparam3() {
+        return param3;
     }
 
-    public void setArg2(String arg2) {
-        this.arg2 = arg2;
+    public void setparam3(String param3) {
+        this.param3 = param3;
     }
 
-    public String getResult() {
-        return result;
+    public String getparam4() {
+        return param4;
     }
 
-    public void setResult(String result) {
-        this.result = result;
+    public void setparam4(String param4) {
+        this.param4 = param4;
     }
 
     @Override
     public String toString() {
         return "\nQuadruple{" +
-                "op='" + op + '\'' +
-                ", arg1='" + arg1 + '\'' +
-                ", arg2='" + arg2 + '\'' +
-                ", result='" + result + '\'' +
+                "param1='" + param1 + '\'' +
+                ", param2='" + param2 + '\'' +
+                ", param3='" + param3 + '\'' +
+                ", param4='" + param4 + '\'' +
                 '}';
     }
 }
